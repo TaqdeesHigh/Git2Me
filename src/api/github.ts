@@ -162,8 +162,6 @@ export async function saveReadmeContent(content: string): Promise<void> {
     const readmePath = path.join(workspaceRoot, 'README.md');
     
     fs.writeFileSync(readmePath, content, 'utf8');
-    
-    // Open the README in the editor
     const document = await vscode.workspace.openTextDocument(readmePath);
     await vscode.window.showTextDocument(document);
   } catch (error) {

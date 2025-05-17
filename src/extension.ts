@@ -6,15 +6,10 @@ import { ensureConfiguration } from './util/configManager';
 export async function activate(context: vscode.ExtensionContext) {
   console.log('README Updater extension is now active');
   
-  // Ensure configuration is properly set up
   await ensureConfiguration();
-  
-  // Register the command and status bar
   registerUpdateReadmeCommand(context);
   const statusBar = setupStatusBar();
   context.subscriptions.push(statusBar);
-  
-  // Show welcome message on first activation
   const hasShownWelcome = context.globalState.get('readmeUpdater.hasShownWelcome');
   if (!hasShownWelcome) {
     vscode.window.showInformationMessage(

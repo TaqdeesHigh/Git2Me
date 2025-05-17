@@ -16,13 +16,11 @@ export enum LlmProvider {
 export async function ensureConfiguration(): Promise<void> {
   const config = vscode.workspace.getConfiguration('readme-updater');
   
-  // Ensure preferred LLM is valid
   const preferredLlm = config.get<string>('preferredLlm');
   if (!preferredLlm || !Object.values(LlmProvider).includes(preferredLlm as LlmProvider)) {
     await config.update('preferredLlm', LlmProvider.CLAUDE, vscode.ConfigurationTarget.Global);
   }
   
-  // Ensure autoApprove is set to false by default for better UX
   const autoApprove = config.get<boolean>('autoApprove');
   if (autoApprove === undefined) {
     await config.update('autoApprove', false, vscode.ConfigurationTarget.Global);
@@ -54,8 +52,6 @@ export async function getAutoApprove(): Promise<boolean> {
 export async function promptForMissingConfig(): Promise<boolean> {
   const apiKeys = await getApiKeys();
   const preferredLlm = await getPreferredLlm();
-  
-  // Check if GitHub token is missing
   if (!apiKeys.github) {
     const action = await vscode.window.showErrorMessage(
       'GitHub token is required to access repository data. Would you like to set it up now?',
@@ -67,8 +63,6 @@ export async function promptForMissingConfig(): Promise<boolean> {
     }
     return false;
   }
-  
-  // Check if preferred LLM API key is missing
   const missingPreferredKey = !apiKeys[preferredLlm];
   if (missingPreferredKey) {
     const settingName = `readme-updater.${preferredLlm === 'claude' ? 'anthropic' : preferredLlm}ApiKey`;
@@ -82,7 +76,6 @@ export async function promptForMissingConfig(): Promise<boolean> {
       await vscode.commands.executeCommand('workbench.action.openSettings', settingName);
       return false;
     } else if (action === 'Use Different LLM') {
-      // Find an alternative LLM that has an API key configured
       for (const [key, value] of Object.entries(apiKeys)) {
         if (key !== 'github' && value) {
           const provider = key as LlmProvider;
@@ -95,8 +88,6 @@ export async function promptForMissingConfig(): Promise<boolean> {
           return true;
         }
       }
-      
-      // If no alternative LLM has an API key, prompt to set up one
       const setupAction = await vscode.window.showInformationMessage(
         'Please set up at least one LLM API key to continue.',
         'Claude (Recommended)',
