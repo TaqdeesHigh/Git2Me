@@ -1,7 +1,7 @@
 {
   "name": "readme-updater",
   "displayName": "README Updater",
-  "description": "Automatically update README.md based on commit changes",
+  "description": "Automatically update README.md based on commit changes using AI",
   "version": "0.1.0",
   "engines": {
     "vscode": "^1.100.0"
@@ -26,7 +26,7 @@
         "readme-updater.githubToken": {
           "type": "string",
           "default": "",
-          "description": "GitHub Personal Access Token"
+          "description": "GitHub Personal Access Token (required)"
         },
         "readme-updater.openaiApiKey": {
           "type": "string",

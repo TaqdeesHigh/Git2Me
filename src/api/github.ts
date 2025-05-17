@@ -48,18 +48,14 @@ export async function getRepoInfo(): Promise<RepoInfo | undefined> {
     return { owner, repo, branch };
   } catch (error) {
     console.error('Error getting repo info:', error);
-    vscode.window.showErrorMessage('Error getting repository information: ' + (error as Error).message);
     return undefined;
   }
 }
 
-export async function getCommitHistory(count: number = 10): Promise<Commit[]> {
+export async function getCommitHistory(token: string, count: number = 10): Promise<Commit[]> {
   try {
-    const config = vscode.workspace.getConfiguration('readme-updater');
-    const token = config.get('githubToken') as string;
-    
     if (!token) {
-      throw new Error('GitHub token not configured');
+      throw new Error('GitHub token not provided');
     }
     
     const repoInfo = await getRepoInfo();
@@ -91,77 +87,14 @@ export async function getCommitHistory(count: number = 10): Promise<Commit[]> {
     }
   } catch (error) {
     console.error('Error fetching commit history:', error);
-    vscode.window.showErrorMessage('Error fetching commit history: ' + (error as Error).message);
-    return [];
+    throw error;
   }
 }
 
-export async function getFileDiff(fromCommit: string, toCommit: string, filePath: string = 'README.md'): Promise<string> {
+export async function getCodeChanges(token: string, fromCommit: string, toCommit: string): Promise<string> {
   try {
-    const config = vscode.workspace.getConfiguration('readme-updater');
-    const token = config.get('githubToken') as string;
-    
     if (!token) {
-      throw new Error('GitHub token not configured');
-    }
-    
-    const repoInfo = await getRepoInfo();
-    if (!repoInfo) {
-      throw new Error('Could not determine repository information');
-    }
-    
-    const octokit = new Octokit({ auth: token });
-    
-    const response = await octokit.repos.compareCommits({
-      owner: repoInfo.owner,
-      repo: repoInfo.repo,
-      base: fromCommit,
-      head: toCommit
-    });
-
-    const fileChanges = response.data.files?.filter(file => file.filename === filePath);
-    
-    if (!fileChanges || fileChanges.length === 0) {
-      return "No README changes found between these commits.";
-    }
-    
-    return fileChanges[0].patch || "Diff information not available";
-  } catch (error) {
-    console.error('Error getting file diff:', error);
-    vscode.window.showErrorMessage('Error getting file diff: ' + (error as Error).message);
-    return '';
-  }
-}
-
-export async function getReadmeContent(): Promise<string | undefined> {
-  try {
-    const workspaceFolders = vscode.workspace.workspaceFolders;
-    if (!workspaceFolders) {
-      throw new Error('No workspace folder found');
-    }
-    
-    const workspaceRoot = workspaceFolders[0].uri.fsPath;
-    const readmePath = path.join(workspaceRoot, 'README.md');
-    
-    if (!fs.existsSync(readmePath)) {
-      throw new Error('README.md not found in workspace root');
-    }
-    
-    return fs.readFileSync(readmePath, 'utf8');
-  } catch (error) {
-    console.error('Error reading README:', error);
-    vscode.window.showErrorMessage('Error reading README: ' + (error as Error).message);
-    return undefined;
-  }
-}
-
-export async function getCodeChanges(fromCommit: string, toCommit: string): Promise<string> {
-  try {
-    const config = vscode.workspace.getConfiguration('readme-updater');
-    const token = config.get('githubToken') as string;
-    
-    if (!token) {
-      throw new Error('GitHub token not configured');
+      throw new Error('GitHub token not provided');
     }
     
     const repoInfo = await getRepoInfo();
@@ -193,7 +126,48 @@ export async function getCodeChanges(fromCommit: string, toCommit: string): Prom
     return changes || "No code changes found between these commits.";
   } catch (error) {
     console.error('Error getting code changes:', error);
-    vscode.window.showErrorMessage('Error getting code changes: ' + (error as Error).message);
-    return '';
+    throw error;
+  }
+}
+
+export async function getReadmeContent(): Promise<string | undefined> {
+  try {
+    const workspaceFolders = vscode.workspace.workspaceFolders;
+    if (!workspaceFolders) {
+      throw new Error('No workspace folder found');
+    }
+    
+    const workspaceRoot = workspaceFolders[0].uri.fsPath;
+    const readmePath = path.join(workspaceRoot, 'README.md');
+    
+    if (!fs.existsSync(readmePath)) {
+      throw new Error('README.md not found in workspace root');
+    }
+    
+    return fs.readFileSync(readmePath, 'utf8');
+  } catch (error) {
+    console.error('Error reading README:', error);
+    return undefined;
+  }
+}
+
+export async function saveReadmeContent(content: string): Promise<void> {
+  try {
+    const workspaceFolders = vscode.workspace.workspaceFolders;
+    if (!workspaceFolders) {
+      throw new Error('No workspace folder found');
+    }
+    
+    const workspaceRoot = workspaceFolders[0].uri.fsPath;
+    const readmePath = path.join(workspaceRoot, 'README.md');
+    
+    fs.writeFileSync(readmePath, content, 'utf8');
+    
+    // Open the README in the editor
+    const document = await vscode.workspace.openTextDocument(readmePath);
+    await vscode.window.showTextDocument(document);
+  } catch (error) {
+    console.error('Error saving README:', error);
+    throw error;
   }
 }

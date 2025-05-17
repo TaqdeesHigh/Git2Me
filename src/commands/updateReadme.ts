@@ -1,23 +1,32 @@
 import * as vscode from 'vscode';
-import * as path from 'path';
-import * as fs from 'fs';
-import { getCommitHistory, getCodeChanges, getReadmeContent } from '../api/github';
-import { generateReadmeUpdate, LlmResponse } from '../api/llm';
+import { getApiKeys, getPreferredLlm, getAutoApprove, promptForMissingConfig, LlmProvider } from '../util/configManager';
+import { getCommitHistory, getCodeChanges, getReadmeContent, saveReadmeContent } from '../api/github';
+import { generateReadmeUpdate } from '../api/llm';
 import { createPreviewPanel } from '../ui/previewPanel';
 
 export function registerUpdateReadmeCommand(context: vscode.ExtensionContext) {
   const command = vscode.commands.registerCommand('readme-updater.updateReadme', async () => {
     try {
-      const config = vscode.workspace.getConfiguration('readme-updater');
-      const preferredLlm = config.get('preferredLlm') as string;
-      const autoApprove = config.get('autoApprove') as boolean;
-      
-      if (!config.get('githubToken')) {
-        throw new Error('GitHub token not configured. Please add it in extension settings.');
+      // Ensure we have all required configuration
+      const configValid = await promptForMissingConfig();
+      if (!configValid) {
+        return;
       }
       
-      if (!config.get(`${preferredLlm}ApiKey`)) {
-        throw new Error(`${preferredLlm} API key not configured. Please add it in extension settings.`);
+      const apiKeys = await getApiKeys();
+      const preferredLlm = await getPreferredLlm();
+      const autoApprove = await getAutoApprove();
+
+      if (!apiKeys.github) {
+        throw new Error('GitHub token is required but not configured');
+      }
+      
+      const llmKey = preferredLlm === LlmProvider.CLAUDE ? apiKeys.claude :
+                     preferredLlm === LlmProvider.CHATGPT ? apiKeys.chatgpt :
+                     apiKeys.gemini;
+                     
+      if (!llmKey) {
+        throw new Error(`${preferredLlm} API key is required but not configured`);
       }
 
       await vscode.window.withProgress({
@@ -25,11 +34,13 @@ export function registerUpdateReadmeCommand(context: vscode.ExtensionContext) {
         title: 'Updating README.md',
         cancellable: true
       }, async (progress, token) => {
+        if (token.isCancellationRequested) return;
+        
         progress.report({ message: 'Fetching commit history...' });
-        const commits = await getCommitHistory(10);
+        const commits = await getCommitHistory(apiKeys.github!, 10);
         
         if (commits.length < 1) {
-          throw new Error('Not enough commit history found');
+          throw new Error('No commit history found');
         }
         
         const commitItems = commits.map(commit => ({
@@ -47,7 +58,14 @@ export function registerUpdateReadmeCommand(context: vscode.ExtensionContext) {
           return;
         }
         
-        const olderCommits = commitItems.filter(item => item.commit.date < latestCommit.commit.date);
+        const olderCommits = commitItems.filter(item => 
+          new Date(item.commit.date) < new Date(latestCommit.commit.date)
+        );
+        
+        if (olderCommits.length === 0) {
+          throw new Error('Not enough commit history to compare changes');
+        }
+        
         const olderCommit = await vscode.window.showQuickPick(olderCommits, {
           placeHolder: 'Select the older commit to compare against',
           ignoreFocusOut: true
@@ -58,7 +76,7 @@ export function registerUpdateReadmeCommand(context: vscode.ExtensionContext) {
         }
 
         progress.report({ message: 'Analyzing code changes...' });
-        const codeChanges = await getCodeChanges(olderCommit.commit.sha, latestCommit.commit.sha);
+        const codeChanges = await getCodeChanges(apiKeys.github!, olderCommit.commit.sha, latestCommit.commit.sha);
         const readmeContent = await getReadmeContent();
         
         if (!readmeContent) {
@@ -75,6 +93,11 @@ export function registerUpdateReadmeCommand(context: vscode.ExtensionContext) {
         
         progress.report({ message: `Generating README update using ${preferredLlm}...` });
         const update = await generateReadmeUpdate(
+          {
+            claude: apiKeys.claude,
+            chatgpt: apiKeys.chatgpt,
+            gemini: apiKeys.gemini
+          },
           readmeContent,
           codeChanges,
           commitMessages,
@@ -85,41 +108,33 @@ export function registerUpdateReadmeCommand(context: vscode.ExtensionContext) {
           return;
         }
 
-        if (autoApprove) {
-          await applyReadmeChanges(update.suggestedReadmeContent);
-          vscode.window.showInformationMessage('README.md has been updated successfully');
+        // Always show preview if it's the first run or auto-approve is disabled
+        const firstRun = !context.globalState.get('readmeUpdater.hasRunBefore');
+        if (firstRun || !autoApprove) {
+          showReadmePreview(readmeContent, update, preferredLlm, autoApprove);
+          if (firstRun) {
+            context.globalState.update('readmeUpdater.hasRunBefore', true);
+          }
         } else {
-          showReadmePreview(readmeContent, update, preferredLlm);
+          await saveReadmeContent(update.suggestedReadmeContent);
+          vscode.window.showInformationMessage('README.md has been updated successfully!');
         }
       });
       
     } catch (error) {
       console.error('Error updating README:', error);
-      vscode.window.showErrorMessage('Error updating README: ' + (error as Error).message);
+      vscode.window.showErrorMessage('Error updating README: ' + (error instanceof Error ? error.message : String(error)));
     }
   });
+  
   context.subscriptions.push(command);
 }
-async function applyReadmeChanges(newContent: string): Promise<void> {
-  try {
-    const workspaceFolders = vscode.workspace.workspaceFolders;
-    if (!workspaceFolders) {
-      throw new Error('No workspace folder found');
-    }
-    
-    const workspaceRoot = workspaceFolders[0].uri.fsPath;
-    const readmePath = path.join(workspaceRoot, 'README.md');
-    
-    fs.writeFileSync(readmePath, newContent, 'utf8');
-    
-    const document = await vscode.workspace.openTextDocument(readmePath);
-    await vscode.window.showTextDocument(document);
-  } catch (error) {
-    console.error('Error applying README changes:', error);
-    vscode.window.showErrorMessage('Error applying README changes: ' + (error as Error).message);
-  }
-}
 
-function showReadmePreview(currentContent: string, update: LlmResponse, llmProvider: string): void {
-  createPreviewPanel(currentContent, update, llmProvider, applyReadmeChanges);
+function showReadmePreview(
+  currentContent: string, 
+  update: { suggestedReadmeContent: string, changeDescription: string }, 
+  llmProvider: string,
+  autoApprove: boolean
+): void {
+  createPreviewPanel(currentContent, update, llmProvider, autoApprove, saveReadmeContent);
 }

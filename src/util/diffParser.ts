@@ -28,6 +28,7 @@ export function parseDiffContent(diffContent: string): ParsedDiff {
       removedLines++;
     }
   });
+  
   const significantChanges = (addedLines + removedLines > 10) || (changedFiles.size > 3);
   
   return {

@@ -1,11 +1,11 @@
 import * as vscode from 'vscode';
-import { LlmResponse } from '../api/llm';
 import * as diff from 'diff';
 
 export function createPreviewPanel(
   currentContent: string,
-  update: LlmResponse,
+  update: { suggestedReadmeContent: string, changeDescription: string },
   llmProvider: string,
+  autoApprove: boolean,
   applyChangesCallback: (content: string) => Promise<void>
 ): void {
   const panel = vscode.window.createWebviewPanel(
@@ -17,45 +17,63 @@ export function createPreviewPanel(
       retainContextWhenHidden: true
     }
   );
+  
   const differences = diff.diffLines(currentContent, update.suggestedReadmeContent);
 
-  panel.webview.html = getWebviewContent(
-    currentContent,
+    panel.webview.html = getWebviewContent(
     update.suggestedReadmeContent,
     differences,
     update.changeDescription,
-    llmProvider
-  );
-  
+    llmProvider,
+    autoApprove
+    );
+    
   panel.webview.onDidReceiveMessage(
     async message => {
-      switch (message.command) {
-        case 'apply':
-          await applyChangesCallback(update.suggestedReadmeContent);
-          vscode.window.showInformationMessage('README.md has been updated successfully');
-          panel.dispose();
-          break;
-          
-        case 'applyEdited':
-          await applyChangesCallback(message.content);
-          vscode.window.showInformationMessage('README.md has been updated successfully with your edits');
-          panel.dispose();
-          break;
-          
-        case 'cancel':
-          panel.dispose();
-          break;
+      try {
+        switch (message.command) {
+          case 'apply':
+            await applyChangesCallback(update.suggestedReadmeContent);
+            vscode.window.showInformationMessage('README.md has been updated successfully!');
+            panel.dispose();
+            break;
+            
+          case 'applyEdited':
+            await applyChangesCallback(message.content);
+            vscode.window.showInformationMessage('README.md has been updated with your edits!');
+            panel.dispose();
+            break;
+            
+          case 'cancel':
+            panel.dispose();
+            break;
+            
+          case 'savePreference':
+            await vscode.workspace.getConfiguration('readme-updater').update(
+              'autoApprove', 
+              message.autoApprove, 
+              vscode.ConfigurationTarget.Global
+            );
+            vscode.window.showInformationMessage(
+              message.autoApprove ? 
+                'Auto-approve enabled. Future README updates will be applied automatically.' : 
+                'Auto-approve disabled. You will be prompted for each README update.'
+            );
+            break;
+        }
+      } catch (error) {
+        vscode.window.showErrorMessage('Error: ' + (error instanceof Error ? error.message : String(error)));
       }
     }
   );
 }
 
 function getWebviewContent(
-  currentContent: string,
   suggestedContent: string,
   differences: diff.Change[],
   changeDescription: string,
-  llmProvider: string
+  llmProvider: string,
+  autoApprove: boolean
 ): string {
   let diffHtml = '';
   
@@ -68,6 +86,7 @@ function getWebviewContent(
       diffHtml += `<div style="color: ${color};">${prefix}${escapeHtml(line)}</div>`;
     });
   });
+  
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -138,7 +157,10 @@ function getWebviewContent(
         .actions {
             margin-top: 20px;
             display: flex;
-            justify-content: flex-end;
+            justify-content: space-between;
+        }
+        .right-actions {
+            display: flex;
         }
         button {
             padding: 8px 16px;
@@ -162,6 +184,18 @@ function getWebviewContent(
             padding: 10px;
             background-color: var(--vscode-textBlockQuote-background);
             border-left: 5px solid var(--vscode-focusBorder);
+        }
+        .preferences {
+            display: flex;
+            align-items: center;
+        }
+        .checkbox-container {
+            display: flex;
+            align-items: center;
+            margin-right: 10px;
+        }
+        .checkbox-container input {
+            margin-right: 5px;
         }
     </style>
 </head>
@@ -187,11 +221,7 @@ function getWebviewContent(
             <div class="diff-view">${diffHtml}</div>
         </div>
         
-        <div id="original" class="tab-content">
-            <div class="markdown-content">${markdownToHtml(currentContent)}</div>
-        </div>
-        
-        <div id="preview" class="tab-content">
+<div id="preview" class="tab-content">
             <div class="markdown-content">${markdownToHtml(suggestedContent)}</div>
         </div>
         
@@ -200,9 +230,18 @@ function getWebviewContent(
         </div>
         
         <div class="actions">
-            <button class="secondary" onclick="cancel()">Cancel</button>
-            <button onclick="applyOriginal()">Apply Changes</button>
-            <button onclick="applyEdited()">Apply Edited Version</button>
+            <div class="preferences">
+                <div class="checkbox-container">
+                    <input type="checkbox" id="autoApprove" ${autoApprove ? 'checked' : ''}>
+                    <label for="autoApprove">Auto-approve future updates</label>
+                </div>
+                <button class="secondary" onclick="savePreferences()">Save Preference</button>
+            </div>
+            <div class="right-actions">
+                <button class="secondary" onclick="cancel()">Cancel</button>
+                <button onclick="applyOriginal()">Apply Changes</button>
+                <button onclick="applyEdited()">Apply Edited Version</button>
+            </div>
         </div>
     </div>
     
@@ -244,6 +283,14 @@ function getWebviewContent(
         function cancel() {
             vscode.postMessage({
                 command: 'cancel'
+            });
+        }
+        
+        function savePreferences() {
+            const autoApprove = document.getElementById('autoApprove').checked;
+            vscode.postMessage({
+                command: 'savePreference',
+                autoApprove: autoApprove
             });
         }
     </script>

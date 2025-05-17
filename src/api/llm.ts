@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import axios from 'axios';
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import { LlmProvider } from '../util/configManager';
 
 export interface LlmResponse {
   suggestedReadmeContent: string;
@@ -8,12 +9,12 @@ export interface LlmResponse {
 }
 
 export async function generateReadmeUpdate(
+  apiKeys: { [key: string]: string | undefined },
   currentReadme: string,
   codeChanges: string,
   commitMessages: string,
-  llmProvider: string = 'claude'
+  llmProvider: LlmProvider = LlmProvider.CLAUDE
 ): Promise<LlmResponse> {
-  const config = vscode.workspace.getConfiguration('readme-updater');
   const prompt = `
 I need to update a README.md file based on recent code changes in my repository.
 
@@ -42,23 +43,22 @@ Provide the full updated README.md content, including parts that didn't change.`
 
   try {
     switch (llmProvider) {
-      case 'claude':
-        return await callClaude(prompt, config.get('anthropicApiKey') as string);
-      case 'chatgpt':
-        return await callChatGPT(prompt, config.get('openaiApiKey') as string);
-      case 'gemini':
-        return await callGemini(prompt, config.get('geminiApiKey') as string);
+      case LlmProvider.CLAUDE:
+        return await callClaude(prompt, apiKeys.claude);
+      case LlmProvider.CHATGPT:
+        return await callChatGPT(prompt, apiKeys.chatgpt);
+      case LlmProvider.GEMINI:
+        return await callGemini(prompt, apiKeys.gemini);
       default:
         throw new Error(`Unsupported LLM provider: ${llmProvider}`);
     }
   } catch (error) {
     console.error('Error calling LLM API:', error);
-    vscode.window.showErrorMessage('Error generating README update: ' + (error as Error).message);
     throw error;
   }
 }
 
-async function callClaude(prompt: string, apiKey: string): Promise<LlmResponse> {
+async function callClaude(prompt: string, apiKey: string | undefined): Promise<LlmResponse> {
   if (!apiKey) {
     throw new Error('Anthropic API key not configured');
   }
@@ -92,7 +92,7 @@ async function callClaude(prompt: string, apiKey: string): Promise<LlmResponse> 
   };
 }
 
-async function callChatGPT(prompt: string, apiKey: string): Promise<LlmResponse> {
+async function callChatGPT(prompt: string, apiKey: string | undefined): Promise<LlmResponse> {
   if (!apiKey) {
     throw new Error('OpenAI API key not configured');
   }
@@ -113,6 +113,7 @@ async function callChatGPT(prompt: string, apiKey: string): Promise<LlmResponse>
       }
     }
   );
+  
   const content = response.data.choices[0].message.content;
   const readmeMatch = content.match(/```(?:markdown)?\n([\s\S]*?)\n```/);
   const suggestedReadmeContent = readmeMatch ? readmeMatch[1] : content;
@@ -124,7 +125,7 @@ async function callChatGPT(prompt: string, apiKey: string): Promise<LlmResponse>
   };
 }
 
-async function callGemini(prompt: string, apiKey: string): Promise<LlmResponse> {
+async function callGemini(prompt: string, apiKey: string | undefined): Promise<LlmResponse> {
   if (!apiKey) {
     throw new Error('Google API key not configured');
   }

@@ -9,6 +9,7 @@ module.exports = {
     filename: 'extension.js',
     libraryTarget: 'commonjs2'
   },
+  devtool: 'nosources-source-map',
   externals: {
     vscode: 'commonjs vscode'
   },
