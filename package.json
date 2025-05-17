@@ -1,0 +1,89 @@
+{
+  "name": "readme-updater",
+  "displayName": "README Updater",
+  "description": "Automatically update README.md based on commit changes",
+  "version": "0.1.0",
+  "engines": {
+    "vscode": "^1.100.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "readme-updater.updateReadme",
+        "title": "Update README from Commits"
+      }
+    ],
+    "configuration": {
+      "title": "README Updater",
+      "properties": {
+        "readme-updater.githubToken": {
+          "type": "string",
+          "default": "",
+          "description": "GitHub Personal Access Token"
+        },
+        "readme-updater.openaiApiKey": {
+          "type": "string",
+          "default": "",
+          "description": "OpenAI API Key for ChatGPT"
+        },
+        "readme-updater.geminiApiKey": {
+          "type": "string",
+          "default": "",
+          "description": "Google API Key for Gemini"
+        },
+        "readme-updater.anthropicApiKey": {
+          "type": "string",
+          "default": "",
+          "description": "Anthropic API Key for Claude"
+        },
+        "readme-updater.preferredLlm": {
+          "type": "string",
+          "enum": [
+            "claude",
+            "chatgpt",
+            "gemini"
+          ],
+          "default": "claude",
+          "description": "Preferred LLM service for generating README updates"
+        },
+        "readme-updater.autoApprove": {
+          "type": "boolean",
+          "default": false,
+          "description": "Automatically apply suggested changes without preview"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "webpack --mode production",
+    "webpack": "webpack --mode development",
+    "webpack-dev": "webpack --mode development --watch",
+    "compile": "webpack",
+    "watch": "webpack --watch"
+  },
+  "devDependencies": {
+    "@types/diff": "^7.0.2",
+    "@types/node": "^16.18.126",
+    "@types/vscode": "^1.100.0",
+    "@typescript-eslint/eslint-plugin": "^6.21.0",
+    "@typescript-eslint/parser": "^6.21.0",
+    "eslint": "^8.57.1",
+    "ts-loader": "^9.5.2",
+    "typescript": "^5.8.3",
+    "webpack": "^5.99.8",
+    "webpack-cli": "^6.0.1"
+  },
+  "dependencies": {
+    "@google/generative-ai": "^0.24.1",
+    "@octokit/rest": "^19.0.13",
+    "axios": "^1.9.0",
+    "diff": "^5.2.0"
+  }
+}
