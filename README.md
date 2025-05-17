@@ -1,4 +1,4 @@
-# README Updater
+# Git2Me
 
 A VS Code extension that automatically updates your README.md based on code changes between commits using AI.
 
