@@ -28,7 +28,7 @@ A VS Code extension that automatically updates your README.md based on code chan
 
 You'll need to configure the following settings:
 
-1. **GitHub Token**: A personal access token with `repo` scope
+1. **GitHub Token**: A personal access token with `repo` scope (required)
 2. **LLM API Key**: At least one of the following:
    - `readme-updater.anthropicApiKey` for Claude (recommended)
    - `readme-updater.openaiApiKey` for ChatGPT
@@ -46,7 +46,7 @@ You'll need to configure the following settings:
 
 ## Extension Settings
 
-* `readme-updater.githubToken`: GitHub Personal Access Token
+* `readme-updater.githubToken`: GitHub Personal Access Token (required)
 * `readme-updater.anthropicApiKey`: Anthropic API Key for Claude
 * `readme-updater.openaiApiKey`: OpenAI API Key for ChatGPT  
 * `readme-updater.geminiApiKey`: Google API Key for Gemini
