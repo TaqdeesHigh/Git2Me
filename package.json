@@ -1,6 +1,6 @@
 {
-  "name": "readme-updater",
-  "displayName": "README Updater",
+  "name": "git2me",
+  "displayName": "Git2Me",
   "description": "Automatically update README.md based on commit changes using AI",
   "version": "0.1.0",
   "engines": {
