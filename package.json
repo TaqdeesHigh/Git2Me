@@ -3,7 +3,7 @@
   "displayName": "Git2Me",
   "publisher": "TaqdeesHigh",
   "description": "Automatically update README.md based on commit changes using AI",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "engines": {
     "vscode": "^1.100.0"
   },
