@@ -9,6 +9,7 @@ A VS Code extension that automatically updates your README.md based on code chan
 - Shows a diff view to preview changes before applying
 - Supports user editing of suggested changes
 - Provides options for auto-approving future updates
+- Generates a new README.md file if one doesn't exist
 
 ## Requirements
 
@@ -39,10 +40,11 @@ You'll need to configure the following settings:
 
 1. Open a repository with a README.md file
 2. Click the "Update README" button in the status bar or run the command
-3. Select the latest commit and an older commit to compare
-4. The extension will analyze changes and suggest README updates
-5. Review the changes in the diff view
-6. Apply the changes as-is, or edit them before applying
+3. If no README.md exists, you will be prompted to generate a new one.
+4. If a README.md exists, select the latest commit and an older commit to compare
+5. The extension will analyze changes and suggest README updates
+6. Review the changes in the diff view
+7. Apply the changes as-is, or edit them before applying
 
 ## Extension Settings
 
@@ -52,15 +54,6 @@ You'll need to configure the following settings:
 * `readme-updater.geminiApiKey`: Google API Key for Gemini
 * `readme-updater.preferredLlm`: Preferred LLM service (claude, chatgpt, gemini)
 * `readme-updater.autoApprove`: Automatically apply changes without preview
-
-## Release Notes
-
-### 0.1.0
-
-- Initial release
-- Support for Claude, ChatGPT, and Gemini
-- Diff view, preview and editing capabilities
-- Auto-approve settings
 
 ## Contributing
 
