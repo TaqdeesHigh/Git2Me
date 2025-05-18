@@ -8,9 +8,12 @@ export function createPreviewPanel(
   autoApprove: boolean,
   applyChangesCallback: (content: string) => Promise<void>
 ): void {
+  const isNewReadme = currentContent === "";
+  const panelTitle = isNewReadme ? 'Create New README' : 'README Update Preview';
+  
   const panel = vscode.window.createWebviewPanel(
     'readmePreview',
-    'README Update Preview',
+    panelTitle,
     vscode.ViewColumn.One,
     {
       enableScripts: true,

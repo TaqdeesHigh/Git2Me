@@ -141,7 +141,7 @@ export async function getReadmeContent(): Promise<string | undefined> {
     const readmePath = path.join(workspaceRoot, 'README.md');
     
     if (!fs.existsSync(readmePath)) {
-      throw new Error('README.md not found in workspace root');
+      return undefined;
     }
     
     return fs.readFileSync(readmePath, 'utf8');

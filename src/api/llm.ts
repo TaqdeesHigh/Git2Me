@@ -67,7 +67,7 @@ async function callClaude(prompt: string, apiKey: string | undefined): Promise<L
     'https://api.anthropic.com/v1/messages',
     {
       model: "claude-3-opus-20240229",
-      max_tokens: 4000,
+      max_tokens: 20000,
       messages: [
         { role: "user", content: prompt }
       ]
@@ -82,9 +82,14 @@ async function callClaude(prompt: string, apiKey: string | undefined): Promise<L
   );
 
   const content = response.data.content[0].text;
-  const readmeMatch = content.match(/```(?:markdown)?\n([\s\S]*?)\n```/);
+  const readmeMatch = content.match(/```(?:markdown)?\s*([\s\S]*?)\s*```/);
   const suggestedReadmeContent = readmeMatch ? readmeMatch[1] : content;
-  const changeDescription = content.split('```')[0].trim();
+  let changeDescription = '';
+  if (content.includes('```')) {
+    changeDescription = content.split('```')[0].trim();
+  } else {
+    changeDescription = content.split('\n\n')[0].trim();
+  }
 
   return {
     suggestedReadmeContent,
@@ -104,7 +109,7 @@ async function callChatGPT(prompt: string, apiKey: string | undefined): Promise<
       messages: [
         { role: "user", content: prompt }
       ],
-      max_tokens: 4000
+      max_tokens: 20000
     },
     {
       headers: {
@@ -115,9 +120,14 @@ async function callChatGPT(prompt: string, apiKey: string | undefined): Promise<
   );
   
   const content = response.data.choices[0].message.content;
-  const readmeMatch = content.match(/```(?:markdown)?\n([\s\S]*?)\n```/);
+  const readmeMatch = content.match(/```(?:markdown)?\s*([\s\S]*?)\s*```/);
   const suggestedReadmeContent = readmeMatch ? readmeMatch[1] : content;
-  const changeDescription = content.split('```')[0].trim();
+  let changeDescription = '';
+  if (content.includes('```')) {
+    changeDescription = content.split('```')[0].trim();
+  } else {
+    changeDescription = content.split('\n\n')[0].trim();
+  }
 
   return {
     suggestedReadmeContent,
@@ -131,15 +141,37 @@ async function callGemini(prompt: string, apiKey: string | undefined): Promise<L
   }
 
   const genAI = new GoogleGenerativeAI(apiKey);
-  const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
-  const result = await model.generateContent(prompt);
-  const content = result.response.text();
-  const readmeMatch = content.match(/```(?:markdown)?\n([\s\S]*?)\n```/);
-  const suggestedReadmeContent = readmeMatch ? readmeMatch[1] : content;
-  const changeDescription = content.split('```')[0].trim();
+  const model = genAI.getGenerativeModel({ 
+    model: "gemini-2.0-flash",
+    generationConfig: {
+      maxOutputTokens: 100000,
+      temperature: 0.2,
+    }
+  });
+  
+  const readmePrompt = prompt + "\n\nPlease ONLY output the complete README.md file with NO additional text before or after it. Don't stop until you've completed the entire README.";
+  
+  try {
+    const result = await model.generateContent(readmePrompt);
+    const readmeContent = result.response.text().trim();
+    let suggestedReadmeContent = readmeContent;
+    if (suggestedReadmeContent.startsWith("```") && suggestedReadmeContent.endsWith("```")) {
+      suggestedReadmeContent = suggestedReadmeContent
+        .replace(/^```(?:markdown)?/, '')
+        .replace(/```$/, '')
+        .trim();
+    }
+    
+    const descPrompt = prompt + "\n\nBased on the changes described above, please provide ONLY a brief summary (1-3 sentences) of the key changes made to the README.";
+    const descResult = await model.generateContent(descPrompt);
+    const changeDescription = descResult.response.text().trim();
 
-  return {
-    suggestedReadmeContent,
-    changeDescription
-  };
+    return {
+      suggestedReadmeContent,
+      changeDescription
+    };
+  } catch (error) {
+    console.error("Error generating content with Gemini:", error);
+    throw new Error(`Gemini API error: ${error instanceof Error ? error.message : String(error)}`);
+  }
 }
