@@ -10,6 +10,7 @@ A VS Code extension that automatically updates your README.md based on code chan
 - Supports user editing of suggested changes
 - Provides options for auto-approving future updates
 - Generates a new README.md file if one doesn't exist
+- Token Limit Usage Options (Low, Medium, High) selectable from extension settings
 
 ## Requirements
 
@@ -35,6 +36,7 @@ You'll need to configure the following settings:
    - `readme-updater.openaiApiKey` for ChatGPT
    - `readme-updater.geminiApiKey` for Gemini
 3. **Preferred LLM**: Select your preferred AI service
+4. **Token Limit Usage**: Select your preferred token limit (small, medium, large)
 
 ## Usage
 
@@ -53,6 +55,7 @@ You'll need to configure the following settings:
 * `readme-updater.openaiApiKey`: OpenAI API Key for ChatGPT  
 * `readme-updater.geminiApiKey`: Google API Key for Gemini
 * `readme-updater.preferredLlm`: Preferred LLM service (claude, chatgpt, gemini)
+* `readme-updater.tokenLimit`: Preferred token limit (small, medium, large)
 * `readme-updater.autoApprove`: Automatically apply changes without preview
 
 ## Contributing
