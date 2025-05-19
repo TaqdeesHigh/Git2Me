@@ -1,3 +1,4 @@
+//configManager.ts
 import * as vscode from 'vscode';
 
 export interface ApiKeys {
@@ -13,6 +14,12 @@ export enum LlmProvider {
   GEMINI = 'gemini'
 }
 
+export enum TokenLimit {
+  SMALL = 'small',
+  MEDIUM = 'medium',
+  LARGE = 'large'
+}
+
 export async function ensureConfiguration(): Promise<void> {
   const config = vscode.workspace.getConfiguration('readme-updater');
   
@@ -24,6 +31,11 @@ export async function ensureConfiguration(): Promise<void> {
   const autoApprove = config.get<boolean>('autoApprove');
   if (autoApprove === undefined) {
     await config.update('autoApprove', false, vscode.ConfigurationTarget.Global);
+  }
+  
+  const tokenLimit = config.get<string>('tokenLimit');
+  if (!tokenLimit || !Object.values(TokenLimit).includes(tokenLimit as TokenLimit)) {
+    await config.update('tokenLimit', TokenLimit.MEDIUM, vscode.ConfigurationTarget.Global);
   }
 }
 
@@ -42,6 +54,12 @@ export async function getPreferredLlm(): Promise<LlmProvider> {
   const config = vscode.workspace.getConfiguration('readme-updater');
   const preferredLlm = config.get<string>('preferredLlm') as LlmProvider;
   return preferredLlm || LlmProvider.CLAUDE;
+}
+
+export async function getTokenLimit(): Promise<TokenLimit> {
+  const config = vscode.workspace.getConfiguration('readme-updater');
+  const tokenLimit = config.get<string>('tokenLimit') as TokenLimit;
+  return tokenLimit || TokenLimit.MEDIUM;
 }
 
 export async function getAutoApprove(): Promise<boolean> {

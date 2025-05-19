@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
 import * as fs from 'fs';
-import { getApiKeys, getPreferredLlm, getAutoApprove, promptForMissingConfig, LlmProvider } from '../util/configManager';
+import { getApiKeys, getPreferredLlm, getAutoApprove, promptForMissingConfig, getTokenLimit, LlmProvider } from '../util/configManager';
 import { getCommitHistory, getCodeChanges, getReadmeContent, saveReadmeContent } from '../api/github';
 import { generateReadmeUpdate } from '../api/llm';
 import { createPreviewPanel } from '../ui/previewPanel';
@@ -15,6 +15,7 @@ export function registerUpdateReadmeCommand(context: vscode.ExtensionContext) {
       }
       
       const apiKeys = await getApiKeys();
+      const tokenLimit = await getTokenLimit();
       const preferredLlm = await getPreferredLlm();
       const autoApprove = await getAutoApprove();
 
@@ -180,6 +181,7 @@ async function handleReadmeUpdate(
       .join('\n');
     
     progress.report({ message: `Generating README update using ${preferredLlm}...` });
+    const tokenLimit = await getTokenLimit();
     const update = await generateReadmeUpdate(
       {
         claude: apiKeys.claude,
@@ -189,9 +191,10 @@ async function handleReadmeUpdate(
       readmeContent,
       codeChanges,
       commitMessages,
-      preferredLlm
+      preferredLlm,
+      tokenLimit
     );
-    
+        
     if (token.isCancellationRequested) {
       return;
     }
@@ -255,6 +258,12 @@ Include appropriate badges if you can determine the technology stack.`;
   }
 }
 
+async function updateReadmeFile(uri: vscode.Uri, content: string): Promise<void> {
+  const encoder = new TextEncoder();
+  const bytes = encoder.encode(content);
+  await vscode.workspace.fs.writeFile(uri, bytes);
+}
+
 async function saveNewReadme(content: string): Promise<void> {
   try {
     const workspaceFolders = vscode.workspace.workspaceFolders;
@@ -277,11 +286,27 @@ async function saveNewReadme(content: string): Promise<void> {
 function showReadmePreview(
   currentContent: string, 
   update: { suggestedReadmeContent: string, changeDescription: string }, 
-  llmProvider: string,
+  llmProvider: LlmProvider,
   autoApprove: boolean
 ): void {
   const isNewReadme = currentContent === "";
-  const callback = isNewReadme ? saveNewReadme : saveReadmeContent;
-  
-  createPreviewPanel(currentContent, update, llmProvider, autoApprove, callback);
+
+  (async () => {
+    const tokenLimit = await getTokenLimit();
+    
+    createPreviewPanel(
+      currentContent,
+      update,
+      llmProvider,
+      autoApprove,
+      tokenLimit,
+      async (content) => {
+        if (isNewReadme) {
+          await saveNewReadme(content);
+        } else {
+          await saveReadmeContent(content);
+        }
+      }
+    );
+  })();
 }

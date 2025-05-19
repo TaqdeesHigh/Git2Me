@@ -1,14 +1,21 @@
 ## Changelog
 
+### 0.1.2
+
+#### Added
+* Token Limit Usage Options (Low, Medium, High) selectable from extension settings
+
+#### Fixed
+* Resolved issue where AI would stop before generating the entire README file
+* Improved UI stability and reduced bugs
+
 ### 0.1.1
 
 #### Added
-
-* README generator support when no `README.md` exists.
-* Step in **Usage** section explaining behavior when `README.md` does **not** exist.
+* README generator support when no `README.md` exists
+* Step in **Usage** section explaining behavior when `README.md` does **not** exist
 * New bullet point in **Features**:
-
-  > Generates a new `README.md` file if one doesn't exist.
+ > Generates a new `README.md` file if one doesn't exist
 
 ### 0.1.0
 

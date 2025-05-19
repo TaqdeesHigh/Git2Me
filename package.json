@@ -3,7 +3,7 @@
   "displayName": "Git2Me",
   "publisher": "TaqdeesHigh",
   "description": "Automatically update README.md based on commit changes using AI",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "engines": {
     "vscode": "^1.100.0"
   },
@@ -54,6 +54,16 @@
           "default": "claude",
           "description": "Preferred LLM service for generating README updates"
         },
+        "readme-updater.tokenLimit": {
+          "type": "string",
+          "enum": [
+            "small",
+            "medium",
+            "large"
+          ],
+          "default": "medium",
+          "description": "Control the size of generated README (affects token usage)"
+        },
         "readme-updater.autoApprove": {
           "type": "boolean",
           "default": false,
@@ -84,6 +94,7 @@
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
     "@octokit/rest": "^19.0.13",
+    "@vscode/vsce": "^3.4.1",
     "axios": "^1.9.0",
     "diff": "^5.2.0"
   }
