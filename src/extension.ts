@@ -17,7 +17,7 @@ export async function activate(context: vscode.ExtensionContext) {
       'Set up API Keys'
     ).then(selection => {
       if (selection === 'Set up API Keys') {
-        vscode.commands.executeCommand('workbench.action.openSettings', 'readme-updater');
+        vscode.commands.executeCommand('workbench.action.openSettings', 'git2me');
       }
     });
     context.globalState.update('readmeUpdater.hasShownWelcome', true);

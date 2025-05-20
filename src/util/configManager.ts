@@ -1,4 +1,3 @@
-//configManager.ts
 import * as vscode from 'vscode';
 
 export interface ApiKeys {
@@ -21,7 +20,7 @@ export enum TokenLimit {
 }
 
 export async function ensureConfiguration(): Promise<void> {
-  const config = vscode.workspace.getConfiguration('readme-updater');
+  const config = vscode.workspace.getConfiguration('git2me');
   
   const preferredLlm = config.get<string>('preferredLlm');
   if (!preferredLlm || !Object.values(LlmProvider).includes(preferredLlm as LlmProvider)) {
@@ -40,7 +39,7 @@ export async function ensureConfiguration(): Promise<void> {
 }
 
 export async function getApiKeys(): Promise<ApiKeys> {
-  const config = vscode.workspace.getConfiguration('readme-updater');
+  const config = vscode.workspace.getConfiguration('git2me');
   
   return {
     github: config.get<string>('githubToken'),
@@ -51,19 +50,19 @@ export async function getApiKeys(): Promise<ApiKeys> {
 }
 
 export async function getPreferredLlm(): Promise<LlmProvider> {
-  const config = vscode.workspace.getConfiguration('readme-updater');
+  const config = vscode.workspace.getConfiguration('git2me');
   const preferredLlm = config.get<string>('preferredLlm') as LlmProvider;
   return preferredLlm || LlmProvider.CLAUDE;
 }
 
 export async function getTokenLimit(): Promise<TokenLimit> {
-  const config = vscode.workspace.getConfiguration('readme-updater');
+  const config = vscode.workspace.getConfiguration('git2me');
   const tokenLimit = config.get<string>('tokenLimit') as TokenLimit;
   return tokenLimit || TokenLimit.MEDIUM;
 }
 
 export async function getAutoApprove(): Promise<boolean> {
-  const config = vscode.workspace.getConfiguration('readme-updater');
+  const config = vscode.workspace.getConfiguration('git2me');
   return config.get<boolean>('autoApprove') === true;
 }
 
@@ -77,13 +76,13 @@ export async function promptForMissingConfig(): Promise<boolean> {
     );
     
     if (action === 'Open Settings') {
-      await vscode.commands.executeCommand('workbench.action.openSettings', 'readme-updater.githubToken');
+      await vscode.commands.executeCommand('workbench.action.openSettings', 'git2me.githubToken');
     }
     return false;
   }
   const missingPreferredKey = !apiKeys[preferredLlm];
   if (missingPreferredKey) {
-    const settingName = `readme-updater.${preferredLlm === 'claude' ? 'anthropic' : preferredLlm}ApiKey`;
+    const settingName = `git2me.${preferredLlm === 'claude' ? 'anthropic' : preferredLlm}ApiKey`;
     const action = await vscode.window.showErrorMessage(
       `${preferredLlm.charAt(0).toUpperCase() + preferredLlm.slice(1)} API key is required. Would you like to set it up now?`,
       'Open Settings',
@@ -97,7 +96,7 @@ export async function promptForMissingConfig(): Promise<boolean> {
       for (const [key, value] of Object.entries(apiKeys)) {
         if (key !== 'github' && value) {
           const provider = key as LlmProvider;
-          await vscode.workspace.getConfiguration('readme-updater').update(
+          await vscode.workspace.getConfiguration('git2me').update(
             'preferredLlm', 
             provider, 
             vscode.ConfigurationTarget.Global
@@ -116,7 +115,7 @@ export async function promptForMissingConfig(): Promise<boolean> {
       if (setupAction) {
         const llm = setupAction === 'Claude (Recommended)' ? 'anthropic' : 
                    setupAction === 'ChatGPT' ? 'openai' : 'gemini';
-        await vscode.commands.executeCommand('workbench.action.openSettings', `readme-updater.${llm}ApiKey`);
+        await vscode.commands.executeCommand('workbench.action.openSettings', `git2me.${llm}ApiKey`);
       }
       return false;
     }

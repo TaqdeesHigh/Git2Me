@@ -7,7 +7,7 @@ import { generateReadmeUpdate } from '../api/llm';
 import { createPreviewPanel } from '../ui/previewPanel';
 
 export function registerUpdateReadmeCommand(context: vscode.ExtensionContext) {
-  const command = vscode.commands.registerCommand('readme-updater.updateReadme', async () => {
+  const command = vscode.commands.registerCommand('git2me.updateReadme', async () => {
     try {
       const configValid = await promptForMissingConfig();
       if (!configValid) {

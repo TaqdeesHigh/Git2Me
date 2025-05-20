@@ -1,9 +1,9 @@
 {
   "name": "git2me",
-  "displayName": "Git2Me",
+  "displayName": "Git2Me - AI README Updater",
   "publisher": "TaqdeesHigh",
-  "description": "Automatically update README.md based on commit changes using AI",
-  "version": "0.1.2",
+  "description": "Generate and update your project's README.md using AI with visual diffs and intelligent UI feedback based on Git commits.",
+  "version": "0.1.3",
   "engines": {
     "vscode": "^1.100.0"
   },
@@ -17,34 +17,34 @@
   "contributes": {
     "commands": [
       {
-        "command": "readme-updater.updateReadme",
+        "command": "git2me.updateReadme",
         "title": "Update README from Commits"
       }
     ],
     "configuration": {
-      "title": "README Updater",
+      "title": "Git2Me - AI README Updater Settings",
       "properties": {
-        "readme-updater.githubToken": {
+        "git2me.githubToken": {
           "type": "string",
           "default": "",
           "description": "GitHub Personal Access Token (required)"
         },
-        "readme-updater.openaiApiKey": {
+        "git2me.openaiApiKey": {
           "type": "string",
           "default": "",
           "description": "OpenAI API Key for ChatGPT"
         },
-        "readme-updater.geminiApiKey": {
+        "git2me.geminiApiKey": {
           "type": "string",
           "default": "",
           "description": "Google API Key for Gemini"
         },
-        "readme-updater.anthropicApiKey": {
+        "git2me.anthropicApiKey": {
           "type": "string",
           "default": "",
           "description": "Anthropic API Key for Claude"
         },
-        "readme-updater.preferredLlm": {
+        "git2me.preferredLlm": {
           "type": "string",
           "enum": [
             "claude",
@@ -54,7 +54,7 @@
           "default": "claude",
           "description": "Preferred LLM service for generating README updates"
         },
-        "readme-updater.tokenLimit": {
+        "git2me.tokenLimit": {
           "type": "string",
           "enum": [
             "small",
@@ -64,7 +64,7 @@
           "default": "medium",
           "description": "Control the size of generated README (affects token usage)"
         },
-        "readme-updater.autoApprove": {
+        "git2me.autoApprove": {
           "type": "boolean",
           "default": false,
           "description": "Automatically apply suggested changes without preview"
