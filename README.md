@@ -1,4 +1,5 @@
-# Git2Me
+md
+# Git2Me - AI README Updater
 
 A VS Code extension that automatically updates your README.md based on code changes between commits using AI.
 
@@ -6,7 +7,10 @@ A VS Code extension that automatically updates your README.md based on code chan
 
 - Automatically analyzes code changes between commits
 - Uses AI (Claude, ChatGPT, or Gemini) to suggest README updates
-- Shows a diff view to preview changes before applying
+- Shows a split diff view with color-coded lines to preview changes before applying:
+  - 🟩 Green for new lines
+  - 🟨 Yellow for edited lines
+  - 🟥 Red for removed lines
 - Supports user editing of suggested changes
 - Provides options for auto-approving future updates
 - Generates a new README.md file if one doesn't exist
@@ -32,9 +36,9 @@ You'll need to configure the following settings:
 
 1. **GitHub Token**: A personal access token with `repo` scope (required)
 2. **LLM API Key**: At least one of the following:
-   - `readme-updater.anthropicApiKey` for Claude (recommended)
-   - `readme-updater.openaiApiKey` for ChatGPT
-   - `readme-updater.geminiApiKey` for Gemini
+   - `git2me.anthropicApiKey` for Claude (recommended)
+   - `git2me.openaiApiKey` for ChatGPT
+   - `git2me.geminiApiKey` for Gemini
 3. **Preferred LLM**: Select your preferred AI service
 4. **Token Limit Usage**: Select your preferred token limit (small, medium, large)
 
@@ -45,18 +49,18 @@ You'll need to configure the following settings:
 3. If no README.md exists, you will be prompted to generate a new one.
 4. If a README.md exists, select the latest commit and an older commit to compare
 5. The extension will analyze changes and suggest README updates
-6. Review the changes in the diff view
+6. Review the changes in the split diff view, which highlights additions, deletions, and modifications with distinct colors.
 7. Apply the changes as-is, or edit them before applying
 
 ## Extension Settings
 
-* `readme-updater.githubToken`: GitHub Personal Access Token (required)
-* `readme-updater.anthropicApiKey`: Anthropic API Key for Claude
-* `readme-updater.openaiApiKey`: OpenAI API Key for ChatGPT  
-* `readme-updater.geminiApiKey`: Google API Key for Gemini
-* `readme-updater.preferredLlm`: Preferred LLM service (claude, chatgpt, gemini)
-* `readme-updater.tokenLimit`: Preferred token limit (small, medium, large)
-* `readme-updater.autoApprove`: Automatically apply changes without preview
+* `git2me.githubToken`: GitHub Personal Access Token (required)
+* `git2me.anthropicApiKey`: Anthropic API Key for Claude
+* `git2me.openaiApiKey`: OpenAI API Key for ChatGPT
+* `git2me.geminiApiKey`: Google API Key for Gemini
+* `git2me.preferredLlm`: Preferred LLM service (claude, chatgpt, gemini)
+* `git2me.tokenLimit`: Preferred token limit (small, medium, large)
+* `git2me.autoApprove`: Automatically apply changes without preview
 
 ## Contributing
 
